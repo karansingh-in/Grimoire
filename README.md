@@ -73,7 +73,7 @@ contains keystores or APKs — both are git-ignored.
 | Job | Runner | Output |
 | --- | --- | --- |
 | `android` | `ubuntu-latest`, JDK 21 | Installable **debug APK** artifact, always |
-| `android-release` | same, only when signing secrets exist | Signed **release APK** artifact |
+| `android-release` | same | **Unsigned release APK** always; **signed release APK** too when signing secrets exist |
 | `ios` | `macos-latest` (Xcode) | Unsigned **IPA** artifact (sideloadable with re-signing, e.g. AltStore/Sideloadly) + compilation proof |
 
 Release signing uses three repository secrets (nothing sensitive is committed):
