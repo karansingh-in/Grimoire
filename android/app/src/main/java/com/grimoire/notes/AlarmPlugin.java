@@ -4,7 +4,9 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -76,5 +78,47 @@ public class AlarmPlugin extends Plugin {
         }
         cancelScheduled(getContext(), id);
         call.resolve();
+    }
+
+    @PluginMethod
+    public void ping(PluginCall call) {
+        call.resolve();
+    }
+
+    /** Whether exact alarms and notifications are actually granted. */
+    @PluginMethod
+    public void status(PluginCall call) {
+        Context context = getContext();
+        boolean exact = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            exact = manager == null || manager.canScheduleExactAlarms();
+        }
+        boolean notifications = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            android.app.NotificationManager manager =
+                (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) {
+                notifications = manager.areNotificationsEnabled();
+            }
+        }
+        JSObject result = new JSObject();
+        result.put("exact", exact);
+        result.put("notifications", notifications);
+        call.resolve(result);
+    }
+
+    /** Opens this app's system settings page (notifications, alarms, battery). */
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception error) {
+            call.reject("Could not open settings");
+        }
     }
 }

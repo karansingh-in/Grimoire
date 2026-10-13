@@ -68,6 +68,7 @@ import {
   setImageKey,
   useImageSrc,
 } from "./lib/images"
+import Alarm from "./lib/alarm-plugin"
 import {
   mirrorReminders,
   resyncAlarms,
@@ -104,6 +105,7 @@ import type {
   StoredImage,
 } from "./types"
 import { App as CapApp } from "@capacitor/app"
+import { Capacitor } from "@capacitor/core"
 import { Haptics, ImpactStyle } from "@capacitor/haptics"
 import {
   BiometricAuth,
@@ -615,6 +617,32 @@ export default function App() {
   const openPendingRef = useRef(() => {})
   openPendingRef.current = openPendingNote
 
+  const [alarmHealth, setAlarmHealth] = useState<{
+    bridge: boolean
+    exact: boolean
+    notifications: boolean
+  } | null>(null)
+
+  const checkAlarmHealth = useCallback(async () => {
+    try {
+      await Alarm.ping()
+      const status = await Alarm.status()
+      setAlarmHealth({ bridge: true, ...status })
+    } catch {
+      setAlarmHealth({ bridge: false, exact: false, notifications: false })
+    }
+  }, [])
+
+  const testAlarm = () => {
+    void Alarm.schedule({
+      id: "grimoire-test",
+      at: Date.now() + 10000,
+      title: "Test alarm",
+    })
+      .then(() => setToast({ message: "Test alarm rings in 10 seconds" }))
+      .catch(() => setToast({ message: "Alarm service didn’t respond" }))
+  }
+
   const saveReminder = (noteId: string, iso: string | null) => {
     const next: PersistedState = {
       ...dataRef.current,
@@ -637,10 +665,18 @@ export default function App() {
 
   useEffect(() => {
     if (boot !== "ready") return
-    void resyncAlarms(data)
-    void mirrorReminders(data)
     openPendingNote()
   }, [data, boot, openPendingNote])
+
+  useEffect(() => {
+    if (boot !== "ready") return
+    const timer = window.setTimeout(() => {
+      void resyncAlarms(data)
+      void mirrorReminders(data)
+      void checkAlarmHealth()
+    }, 500)
+    return () => window.clearTimeout(timer)
+  }, [data, boot, checkAlarmHealth])
 
   const showUndoToast = (message: string) => {
     const snapshot = snapshotRef.current
@@ -1352,8 +1388,10 @@ export default function App() {
             />
             <ReminderList
               notes={reminderNotes}
+              health={alarmHealth}
               onOpen={setEditingId}
               onClear={(id) => saveReminder(id, null)}
+              onTest={testAlarm}
             />
           </>
         ) : (
@@ -2007,59 +2045,112 @@ function LibraryHeader({
 
 function ReminderList({
   notes,
+  health,
   onOpen,
   onClear,
+  onTest,
 }: {
   notes: Note[]
+  health: { bridge: boolean; exact: boolean; notifications: boolean } | null
   onOpen: (id: string) => void
   onClear: (id: string) => void
+  onTest: () => void
 }) {
-  if (notes.length === 0) {
-    return (
-      <div className="empty-state">
-        <div className="empty-icon">
-          <Bell size={26} />
-        </div>
-        <Title as="h2">No reminders</Title>
-        <p>Set one from any note and it will ring here on time.</p>
-      </div>
-    )
-  }
-  const now = Date.now()
+  const native = Capacitor.isNativePlatform()
   return (
-    <div className="collection reminder-list">
-      {notes.map((note) => {
-        const at = new Date(note.reminderAt as string)
-        const overdue = at.getTime() < now
-        return (
-          <div className="reminder-row" key={note.id}>
-            <Button className="reminder-main" onClick={() => onOpen(note.id)}>
-              <span
-                className={`reminder-time${overdue ? " is-overdue" : ""}`}
-              >
-                {at.toLocaleString([], {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </span>
-              <span>
-                <strong>{note.title || "Untitled note"}</strong>
-                {overdue && <small>Overdue</small>}
-              </span>
-              <ChevronRight size={18} />
-            </Button>
-            <IconButton
-              label={`Clear reminder for ${note.title || "untitled note"}`}
-              onClick={() => onClear(note.id)}
-            >
-              <X size={17} />
-            </IconButton>
+    <>
+      {health && !native && (
+        <div className="alarm-note" role="note">
+          <Info size={16} />
+          <p>Alarms ring on the installed app — not in this preview.</p>
+        </div>
+      )}
+      {health && native && !health.bridge && (
+        <div className="alarm-note alarm-note--bad" role="alert">
+          <Info size={16} />
+          <p>
+            The alarm service didn’t respond. Reinstall the app, and if it
+            persists, export a backup first.
+          </p>
+        </div>
+      )}
+      {health?.bridge && native && !health.exact && (
+        <div className="alarm-note alarm-note--bad" role="alert">
+          <Info size={16} />
+          <p>Alarms may ring late without exact timing.</p>
+          <Button
+            variant="chip"
+            onClick={() => void Alarm.openAppSettings()}
+          >
+            Allow
+          </Button>
+        </div>
+      )}
+      {health?.bridge && native && !health.notifications && (
+        <div className="alarm-note alarm-note--bad" role="alert">
+          <Info size={16} />
+          <p>Alarms stay silent with notifications off.</p>
+          <Button
+            variant="chip"
+            onClick={() => void Alarm.openAppSettings()}
+          >
+            Turn on
+          </Button>
+        </div>
+      )}
+      {health?.bridge && native && health.exact && health.notifications && (
+        <div className="alarm-note">
+          <Check size={16} />
+          <p>Alarms are ready on this phone.</p>
+          <Button variant="chip" onClick={onTest}>
+            Test
+          </Button>
+        </div>
+      )}
+      {notes.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon">
+            <Bell size={26} />
           </div>
-        )
-      })}
-    </div>
+          <Title as="h2">No reminders</Title>
+          <p>Set one from any note and it will ring here on time.</p>
+        </div>
+      ) : (
+        <div className="collection reminder-list">
+          {notes.map((note) => {
+            const at = new Date(note.reminderAt as string)
+            const overdue = at.getTime() < Date.now()
+            return (
+              <div className="reminder-row" key={note.id}>
+                <Button className="reminder-main" onClick={() => onOpen(note.id)}>
+                  <span
+                    className={`reminder-time${overdue ? " is-overdue" : ""}`}
+                  >
+                    {at.toLocaleString([], {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span>
+                    <strong>{note.title || "Untitled note"}</strong>
+                    {overdue && <small>Overdue</small>}
+                  </span>
+                  <ChevronRight size={18} />
+                </Button>
+                <IconButton
+                  label={`Clear reminder for ${note.title || "untitled note"}`}
+                  onClick={() => onClear(note.id)}
+                >
+                  <X size={17} />
+                </IconButton>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </>
   )
 }
 

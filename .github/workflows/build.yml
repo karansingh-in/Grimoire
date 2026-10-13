@@ -67,10 +67,8 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
   android-release:
-    name: Android signed release APK
+    name: Android release APK
     needs: web
-    # Only runs when signing secrets are configured; nothing sensitive is committed.
-    if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -94,21 +92,26 @@ jobs:
       - run: pnpm build
       - run: npx cap sync android
 
-      - name: Decode keystore
-        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
-
       - name: Assemble release
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grimoire-release-unsigned-apk
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+
+      # secrets.* is only valid in step-level conditions, never job-level.
       - name: Zipalign + sign
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | head -1)
           ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name zipalign | head -1)
           UNSIGNED=android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -120,6 +123,7 @@ jobs:
           rm -f app-aligned.apk release.keystore
 
       - uses: actions/upload-artifact@v4
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         with:
           name: grimoire-release-apk
           path: Grimoire-release.apk

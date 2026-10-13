@@ -5,4 +5,9 @@ import type { AlarmPlugin } from "./alarm-definitions"
 export class AlarmWeb extends WebPlugin implements AlarmPlugin {
   async schedule(): Promise<void> {}
   async cancel(): Promise<void> {}
+  async ping(): Promise<void> {}
+  async status(): Promise<{ exact: boolean; notifications: boolean }> {
+    return { exact: false, notifications: false }
+  }
+  async openAppSettings(): Promise<void> {}
 }

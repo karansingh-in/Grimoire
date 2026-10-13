@@ -1219,6 +1219,34 @@ a:focus-visible {
   margin-top: 14px;
 }
 
+.alarm-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-raised);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.alarm-note > svg {
+  flex: none;
+  color: var(--accent-strong);
+}
+
+.alarm-note p {
+  flex: 1;
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.alarm-note--bad > svg {
+  color: var(--danger);
+}
+
 .reminder-list {
   display: grid;
   gap: 8px;
