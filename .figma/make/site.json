@@ -1,0 +1,11 @@
+{
+  "title": "Grimoire",
+  "description": "Grimoire is a private, local-only notes app. Notes, checklists, drawings, and photos stay on this device — no account, no cloud, no analytics.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
