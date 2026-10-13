@@ -334,6 +334,7 @@ export default function App() {
   const [search, setSearch] = useState("")
   const [activeLabel, setActiveLabel] = useState<string | null>(null)
   const [composeOpen, setComposeOpen] = useState(false)
+  const [reminderOnCreate, setReminderOnCreate] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
@@ -657,12 +658,13 @@ export default function App() {
     })
   }
 
-  const addNote = (kind: NoteKind) => {
+  const addNote = (kind: NoteKind, opts?: { reminder?: boolean }) => {
     void buzz(ImpactStyle.Medium)
     const note = createNote(kind)
     setData((current) => ({ ...current, notes: [note, ...current.notes] }))
     setEditingId(note.id)
     setComposeOpen(false)
+    setReminderOnCreate(opts?.reminder === true)
   }
 
   const leaveEditor = () => {
@@ -679,6 +681,7 @@ export default function App() {
       }))
     }
     setEditingId(null)
+    setReminderOnCreate(false)
   }
   leaveEditorRef.current = leaveEditor
 
@@ -1268,6 +1271,7 @@ export default function App() {
           labels={data.labels}
           images={data.images}
           note={editingNote}
+          startWithReminder={reminderOnCreate}
           onBack={leaveEditor}
           onChange={(patch) => updateNote(editingNote.id, patch)}
           onDuplicate={() => duplicateNote(editingNote)}
@@ -1489,6 +1493,10 @@ export default function App() {
             <Button onClick={() => addNote("drawing")}>
               <Brush size={18} />
               New drawing
+            </Button>
+            <Button onClick={() => addNote("text", { reminder: true })}>
+              <Bell size={18} />
+              New reminder
             </Button>
           </div>
         )}
@@ -1753,6 +1761,7 @@ function MenuSheet({
         <ShieldCheck size={16} />
         <p>On this device · No account · No cloud</p>
       </div>
+      <p className="settings-label">VIEWS</p>
       <div className="sheet-list menu-nav">
         {navRow(
           "notes",
@@ -1817,7 +1826,7 @@ function MenuSheet({
           <ChevronRight size={17} />
         </Button>
       </div>
-      <p className="settings-label">VIEW</p>
+      <p className="settings-label">DISPLAY</p>
       <div className="segmented segmented--two">
         {(["grid", "list"] as const).map((layout) => (
           <Button
@@ -2060,6 +2069,28 @@ function toLocalInput(iso: string): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
+function fromParts(date: string, time: string): string {
+  const [year, month, day] = date.split("-").map(Number)
+  const [hour, minute] = time.split(":").map(Number)
+  const at = new Date(year, (month ?? 1) - 1, day, hour ?? 0, minute ?? 0)
+  return toLocalInput(at.toISOString())
+}
+
+function quickInput(when: "today" | "tomorrow" | "weekend"): string {
+  const at = new Date()
+  if (when === "today") {
+    at.setHours(at.getHours() + 2, 0, 0, 0)
+  } else if (when === "tomorrow") {
+    at.setDate(at.getDate() + 1)
+    at.setHours(9, 0, 0, 0)
+  } else {
+    const daysUntilSaturday = (6 - at.getDay() + 7) % 7 || 7
+    at.setDate(at.getDate() + daysUntilSaturday)
+    at.setHours(9, 0, 0, 0)
+  }
+  return toLocalInput(at.toISOString())
+}
+
 function ReminderSheet({
   initial,
   onClose,
@@ -2073,8 +2104,22 @@ function ReminderSheet({
 }) {
   const [value, setValue] = useState(initial ? toLocalInput(initial) : "")
   const [error, setError] = useState("")
+  const [datePart, timePart = ""] = value.split("T")
+  const pick = (when: "today" | "tomorrow" | "weekend") => {
+    setValue(quickInput(when))
+    setError("")
+  }
+  const time = value ? new Date(value).getTime() : NaN
+  const summary = Number.isFinite(time)
+    ? new Date(time).toLocaleString([], {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : ""
   const save = () => {
-    const time = new Date(value).getTime()
     if (!value || !Number.isFinite(time)) {
       setError("Pick a date and time first.")
       return
@@ -2087,16 +2132,60 @@ function ReminderSheet({
   }
   return (
     <ActionSheet title="Reminder" onClose={onClose}>
-      <input
-        aria-label="Reminder date and time"
-        className="datetime-input"
-        type="datetime-local"
-        value={value}
-        onChange={(event) => {
-          setValue(event.target.value)
-          setError("")
-        }}
-      />
+      <div className="quick-row" role="group" aria-label="Quick times">
+        <Button
+          variant="chip"
+          onClick={() => pick("today")}
+        >
+          Today
+        </Button>
+        <Button
+          variant="chip"
+          onClick={() => pick("tomorrow")}
+        >
+          Tomorrow
+        </Button>
+        <Button
+          variant="chip"
+          onClick={() => pick("weekend")}
+        >
+          This weekend
+        </Button>
+      </div>
+      <div className="datetime-row">
+        <label className="datetime-field">
+          <span>Date</span>
+          <input
+            aria-label="Reminder date"
+            type="date"
+            value={datePart ?? ""}
+            onChange={(event) => {
+              setValue(fromParts(event.target.value, timePart || "09:00"))
+              setError("")
+            }}
+          />
+        </label>
+        <label className="datetime-field">
+          <span>Time</span>
+          <input
+            aria-label="Reminder time"
+            type="time"
+            value={timePart}
+            onChange={(event) => {
+              const today = new Date()
+              const pad = (n: number) => String(n).padStart(2, "0")
+              const fallback = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
+              setValue(fromParts(datePart || fallback, event.target.value))
+              setError("")
+            }}
+          />
+        </label>
+      </div>
+      {summary && (
+        <p className="reminder-summary" aria-live="polite">
+          Rings {summary}
+        </p>
+      )}
       {error && (
         <p className="lock-error pin-error" role="alert">
           {error}
@@ -2488,6 +2577,7 @@ function NoteEditor({
   note,
   labels,
   images,
+  startWithReminder,
   onBack,
   onChange,
   onDuplicate,
@@ -2502,6 +2592,7 @@ function NoteEditor({
   note: Note
   labels: PersistedState["labels"]
   images: PersistedState["images"]
+  startWithReminder: boolean
   onBack: () => void
   onChange: (patch: Partial<Note>) => void
   onDuplicate: () => void
@@ -2516,7 +2607,7 @@ function NoteEditor({
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [labelsOpen, setLabelsOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
-  const [reminderOpen, setReminderOpen] = useState(false)
+  const [reminderOpen, setReminderOpen] = useState(startWithReminder)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const trashed = note.status === "trashed"
 

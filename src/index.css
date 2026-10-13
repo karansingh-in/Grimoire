@@ -1159,24 +1159,60 @@ a:focus-visible {
   margin-top: 16px;
 }
 
-.datetime-input {
+.quick-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.quick-row .ui-button {
+  flex: 1;
+}
+
+.datetime-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 8px;
+}
+
+.datetime-field {
+  display: grid;
+  gap: 4px;
+}
+
+.datetime-field > span {
+  margin-left: 4px;
+  color: var(--ink-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.datetime-field input {
   width: 100%;
   height: 50px;
-  padding: 0 14px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
   color: var(--ink);
-  font-size: 16px;
+  font-size: 15px;
 }
 
-:root[data-theme="light"] .datetime-input {
+:root[data-theme="light"] .datetime-field input {
   color-scheme: light;
 }
 
-:root[data-theme="dark"] .datetime-input,
-:root[data-theme="system"] .datetime-input {
+:root[data-theme="dark"] .datetime-field input,
+:root[data-theme="system"] .datetime-field input {
   color-scheme: dark;
+}
+
+.reminder-summary {
+  margin: 12px 0 0;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
 }
 
 .reminder-save {
