@@ -1,6 +1,5 @@
 name: Build apps
 
-# CI workflow for Grimoire: builds web, Android (debug/release), and iOS
 on:
   push:
     branches: [main]
@@ -104,7 +103,6 @@ jobs:
           name: grimoire-release-unsigned-apk
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
 
-      # secrets.* is only valid in step-level conditions, never job-level.
       - name: Zipalign + sign
         if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
@@ -169,5 +167,3 @@ jobs:
         with:
           name: grimoire-unsigned-ipa
           path: Grimoire-unsigned.ipa
-
-# Ensure workflow file ends with newline - force re-parse
