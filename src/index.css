@@ -201,8 +201,8 @@ a:focus-visible {
 .icon-button {
   display: inline-grid;
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -231,12 +231,12 @@ a:focus-visible {
 }
 
 .ui-button {
-  min-height: 44px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 0;
   border-radius: 12px;
   color: var(--accent-strong);
@@ -266,8 +266,8 @@ a:focus-visible {
 }
 
 .ui-button--chip {
-  min-height: 34px;
-  padding: 0 13px;
+  min-height: 48px;
+  padding: 0 16px;
   border-radius: 999px;
   color: var(--ink);
   background: var(--surface-muted);
@@ -762,8 +762,8 @@ a:focus-visible {
 }
 
 .checklist-row .icon-button {
-  width: 36px;
-  height: 44px;
+  width: 40px;
+  height: 48px;
   color: var(--ink-tertiary);
 }
 
@@ -773,8 +773,8 @@ a:focus-visible {
 }
 
 .row-actions .icon-button {
-  width: 32px;
-  height: 44px;
+  width: 40px;
+  height: 48px;
 }
 
 .check-control {
@@ -908,8 +908,8 @@ a:focus-visible {
 }
 
 .ink-dot {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   border: 0;
@@ -933,8 +933,8 @@ a:focus-visible {
 }
 
 .drawing-actions .icon-button {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
 }
 
 .drawing-hint {
@@ -1039,8 +1039,8 @@ a:focus-visible {
 
 .swatch {
   aspect-ratio: 1;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 48px;
+  min-height: 48px;
   display: grid;
   place-items: center;
   border: 0.5px solid var(--line);
@@ -1303,8 +1303,8 @@ a:focus-visible {
 }
 
 .reminder-row > .icon-button {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   margin-right: 6px;
 }
 
@@ -1477,7 +1477,7 @@ a.settings-row > span:nth-child(2) {
 }
 
 .create-label .text-input {
-  height: 44px;
+  height: 48px;
   padding: 0 14px;
   border-radius: 12px;
   background: var(--surface-raised);
@@ -1499,8 +1499,8 @@ a.settings-row > span:nth-child(2) {
 }
 
 .label-row > .icon-button {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   margin-right: 4px;
 }
 
