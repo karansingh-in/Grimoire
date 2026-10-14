@@ -57,6 +57,7 @@ jobs:
       - run: pnpm build
       - run: npx cap add android || true
       - run: ls -la
+      - run: test -d android && echo "android directory exists" || echo "android directory does not exist"
       - run: npx cap sync android
       - run: |
           cd android
