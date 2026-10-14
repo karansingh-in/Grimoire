@@ -138,6 +138,18 @@ jobs:
           name: grimoire-release-apk
           path: Grimoire-release.apk
 
+      - name: Create Android release
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v${{ github.run_number }}
+          name: Grimoire Android Release ${{ github.run_number }}
+          body: |
+            Android release built from commit ${{ github.sha }}
+          files: Grimoire-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   ios:
     name: iOS unsigned IPA
     needs: web
@@ -178,3 +190,15 @@ jobs:
         with:
           name: grimoire-unsigned-ipa
           path: Grimoire-unsigned.ipa
+
+      - name: Create iOS release
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-v${{ github.run_number }}
+          name: Grimoire iOS Release ${{ github.run_number }}
+          body: |
+            iOS release built from commit ${{ github.sha }}
+          files: Grimoire-unsigned.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
