@@ -1,5 +1,6 @@
 name: Build apps
 
+# CI workflow for Grimoire: builds web, Android (debug/release), and iOS
 on:
   push:
     branches: [main]
