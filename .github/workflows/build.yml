@@ -55,8 +55,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - run: npx cap add android
       - run: npx cap sync android
-      - run: ls -la
       - run: |
           cd android
           chmod +x gradlew
