@@ -169,3 +169,5 @@ jobs:
         with:
           name: grimoire-unsigned-ipa
           path: Grimoire-unsigned.ipa
+
+# Ensure workflow file ends with newline
