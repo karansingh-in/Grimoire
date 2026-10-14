@@ -58,6 +58,9 @@ jobs:
       - run: |
           if [ ! -d android ]; then
             npx cap add android
+          else
+            rm -rf android
+            npx cap add android
           fi
       - run: npx cap sync android
       - run: test -d android && echo "android directory exists after sync" || echo "android directory does not exist after sync"
