@@ -1,3 +1,4 @@
+# CI workflow for Grimoire: builds web, Android (debug/release), and iOS
 name: Build apps
 
 on:
