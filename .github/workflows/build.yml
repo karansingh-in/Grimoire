@@ -55,9 +55,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: npx cap add android || true
-      - run: ls -la
-      - run: test -d android && echo "android directory exists after add" || echo "android directory does not exist after add"
+      - run: test -d android || npx cap add android
       - run: npx cap sync android
       - run: test -d android && echo "android directory exists after sync" || echo "android directory does not exist after sync"
       - run: ls -la android 2>/dev/null || echo "android directory not accessible"
